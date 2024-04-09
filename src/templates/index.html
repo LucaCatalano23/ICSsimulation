@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="/static/index.css">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Passwordless Authentication with WebAuthn</title>
+    </head>
+
+    <body>
+        <div class="container">
+            <h1 class="title">Passwordless Authentication with WebAuthn: PLC {{n_plc}}</h1>
+            <div id="registrationResult" class="result"></div>
+
+            <form id="registrationForm">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" default:"">
+                <button type="button" id="registerButton">Register</button>
+            </form>
+            
+            <div id="authenticationResult" class="result"></div>
+            <button type="button" id="authenticateButton">Authenticate</button>
+        </div>
+
+        <script src="https://unpkg.com/cbor-js"></script>
+        <script src="/static/registration.js"></script>
+        <script src="/static/authentication.js"></script>
+    </body>
+</html>

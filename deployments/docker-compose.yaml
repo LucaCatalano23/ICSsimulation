@@ -1,0 +1,94 @@
+version: "3.9"
+services:     
+  plc1:
+    build: ics-docker/.
+    privileged: true
+    working_dir: /src
+    entrypoint: ["./start.sh", "PLC.py", "1"]
+    container_name: plc1
+    volumes:
+      - ../src:/src
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.11
+
+  
+  plc2:
+    build: ics-docker/.
+    privileged: true
+    working_dir: /src
+    entrypoint: ["./start.sh", "PLC.py", "2"]
+    container_name: plc2
+    volumes:
+      - ../src:/src
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.12
+      
+  hmi1:
+    build: ics-docker/.
+    stdin_open: true # docker run -i
+    tty: true  
+    working_dir: /src
+    privileged: true
+    entrypoint: ["./start.sh", "HMI.py", "1"]
+    container_name: hmi1
+    volumes:
+      - ../src:/src
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.21
+    ports: 
+      - "5001:5001"
+        
+  hmi2:
+    build: ics-docker/.
+    stdin_open: true # docker run -i
+    tty: true 
+    privileged: true
+    working_dir: /src
+    entrypoint: ["./start.sh", "HMI.py", "2"]
+    container_name: hmi2
+    volumes:
+      - ../src:/src
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.22
+    ports: 
+      - "5002:5002"
+
+  mysql:
+    image: mysql:latest
+    container_name: db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=user
+    restart: always
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql:/var/lib/mysql
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.30
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql:
+      
+networks:
+  wnet:
+    driver: bridge
+    name: icsnet
+    ipam:
+     config:
+       - subnet: 192.168.0.0/24
+         gateway: 192.168.0.1
+    driver_opts:
+      com.docker.network.bridge.name: br_icsnet
+
+

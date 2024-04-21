@@ -58,7 +58,7 @@ async function authenticate() {
         // Mostra il risultato dell'autenticazione
         if (registrationResult.success) {
             document.getElementById('authenticationResult').innerText = 'Autenticazione riuscita!';
-            window.location.href = '/panel';
+            window.close();
         } else {
             document.getElementById('authenticationResult').innerText = 'Autenticazione fallita.';
         }

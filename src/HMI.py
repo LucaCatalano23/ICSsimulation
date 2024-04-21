@@ -1,30 +1,28 @@
-import sys
-from flask import Flask, request, render_template, jsonify, url_for, redirect
+import tkinter as tk
+import webbrowser
+import threading
+import time
+import mysql.connector
 from pyModbusTCP.client import ModbusClient
+from flask import Flask, request, render_template, jsonify, url_for, redirect
 from Configs import TAG, Controllers
 from webauthn import (generate_registration_options, 
-                      options_to_json, 
-                      verify_registration_response, 
-                      generate_authentication_options, 
-                      verify_authentication_response)
+                          options_to_json, 
+                          verify_registration_response, 
+                          generate_authentication_options, 
+                          verify_authentication_response)
 from webauthn.helpers.structs import (AuthenticatorAttachment,
-                                      AuthenticatorSelectionCriteria,
-                                      ResidentKeyRequirement,
-                                      UserVerificationRequirement)
+                                          AuthenticatorSelectionCriteria,
+                                          ResidentKeyRequirement,
+                                          UserVerificationRequirement)
 from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
-import mysql.connector
 
 app = Flask(__name__, static_url_path='/static' , static_folder='static')
-
-if len(sys.argv) < 2:
-        sys.exit(1)
-n_plc = int(sys.argv[1])
-if n_plc == 1:
-    adress = "https://localhost:5001"
-else:
-    adress = "https://localhost:5002"
-        
-client = ModbusClient(Controllers.PLC_CONFIG[n_plc]["ip"], Controllers.PLC_CONFIG[n_plc]["port"])
+    
+adress = ""
+n_plc = -1
+authenticated = False
+registered_credentials = {}
 
 conn = mysql.connector.connect(
     host="192.168.0.30",  
@@ -37,26 +35,28 @@ conn = mysql.connector.connect(
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', n_plc=n_plc)
+    return render_template('index.html')
 
 @app.route('/register', methods=['POST'])
 def register():
     try:
         data = request.json
         username = data.get('username')    
-        
+
+        if username in registered_credentials:
+            return jsonify({'error': 'Utente già registrato.'}), 500
         # Generare le opzioni di registrazione per il client. 
         # Authenticator_selection è un attributo opzionale
         # per definire meglio l'authenticator
         options = generate_registration_options(rp_id="localhost", 
-                                                rp_name="example",
-                                                user_name=username, 
-                                                authenticator_selection=AuthenticatorSelectionCriteria(
-                                                    resident_key=ResidentKeyRequirement.REQUIRED,
-                                                    user_verification=UserVerificationRequirement.PREFERRED))
+                                                    rp_name="example",
+                                                    user_name=username, 
+                                                    authenticator_selection=AuthenticatorSelectionCriteria(
+                                                        resident_key=ResidentKeyRequirement.REQUIRED,
+                                                        user_verification=UserVerificationRequirement.PREFERRED))
         # Convertire le opzioni in JSON in quanto ci sono oggetti bytes che non possono essere serializzati
         json_options = options_to_json(options)
-        
+
         # Restituire le opzioni al client
         response = jsonify(json_options)
         return response
@@ -131,68 +131,200 @@ def verify():
                                                 credential_current_sign_count=sign_count,
                                                 credential_public_key=credential_public_key,
                                                 require_user_verification=True)
-        
+        global authenticated
+        authenticated = True
         return jsonify({'success': True}), 200
 
     except Exception as e:
         print('Errore durante la verifica delle credenziali:', e)
         return jsonify({'error': 'Errore durante la verifica delle credenziali.'}), 500
 
-# Funzione per la visualizzazione del pannello di controllo e monitoraggio dell'HMI
-@app.route('/panel')
-def panel():
-    return render_template('panel.html', n_plc=n_plc)
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("HMI - Control Panel")
+        
+        # Creazione dei frame per le interfacce
+        self.login = Login(self)
 
-# Funzione per controllare avvio/arresto del flusso/deflusso d'acqua
-@app.route('/control', methods=['POST'])
-def control():
-    data = request.json
-    print(data)
-    name = data.get('name')
-    value = data.get('value')
+        # Mostra il primo frame all'avvio dell'applicazione
+        self.show_frame(self.login)
+
+    def show_frame(self, frame):
+        # Mostra il frame desiderato
+        frame.pack(fill="both", expand=True)
+
+        # Nasconde gli altri frame
+        for child in self.winfo_children():
+            if child != frame:
+                child.pack_forget()
+
+class Login(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+        # Lista delle opzioni del menu a tendina
+        options = ["PLC 1", "PLC 2"]
     
-    if name == "flow":
-        client.write_single_coil(TAG.TAG_LIST[TAG.TANK_FLOW_ACTIVE]["id"], value)
-    if name == "drain":
-        client.write_single_coil(TAG.TAG_LIST[TAG.TANK_DRAIN_ACTIVE]["id"], value)
+        # Variabile per memorizzare l'opzione selezionata
+        self.selected_var = tk.StringVar()
+        self.selected_var.set(options[0])  # Imposta l'opzione predefinita
+
+        # Creazione del menu a tendina
+        self.option_menu = tk.OptionMenu(self, self.selected_var, *options)
+        self.option_menu.pack(padx=10, pady=10)
+
+        # Pulsante per passare alla seconda interfaccia
+        button = tk.Button(self, text="Login", command=self.open_webpage)
+        button.pack()
+        
+        # Dimensioni del frame di login
+        self.configure(width=500, height=300) 
     
-    return 'OK', 200
+    def open_webpage(self):
+            # URL della pagina web da aprire
+            choice = self.selected_var.get()
+            global n_plc
+            global adress
+            if choice == "PLC 1":
+                n_plc = 1
+            elif choice == "PLC 2":
+                n_plc = 2
 
-# Funzione che mi permette di monitorare il livello dell'acqua, il flusso e il deflusso
-@app.route('/monitor', methods=['GET'])
-def monitor():
-    level = client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_LEVEL]["id"])[0]
-    flow_rate = client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_FLOW_RATE]["id"])[0]
-    drain_rate = client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_DRAIN_RATE]["id"])[0]
-    values = {'level': level, 'flow_rate': flow_rate, 'drain_rate': drain_rate}
-    return jsonify(values)
+            port = 5000 + n_plc
+            
+            adress = f"https://localhost:{port}"
+            
+            threading.Thread(target=self.start_server, daemon=True, args=(port,)).start()
+            
+            time.sleep(1)        
+            webbrowser.open(adress)
+            
+            global authenticated
+            while authenticated == False:
+                time.sleep(1)
+            panel = Panel(self.master)
+            self.master.show_frame(panel)
+        
+    def start_server(self,port):
+        try:
+            app.run(host='0.0.0.0', port=port, ssl_context=('server.crt', 'server.key'))
+        except Exception as e:
+            print(f"Errore durante la comunicazione con il server: {e}")
+            
+class Panel(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        global n_plc
+        self.client = ModbusClient(Controllers.PLC_CONFIG[n_plc]["ip"], Controllers.PLC_CONFIG[n_plc]["port"])
+        
+        # Definizione delle variabili per i valori di flusso e drenaggio
+        flow_rate_value = tk.StringVar()
+        drain_rate_value = tk.StringVar()
 
-# Funzione per aggiornare la velocità di flusso 
-@app.route('/flowUpdate', methods=['POST'])
-def flowUpdate():
-    data = request.json
-    value = data.get('value')
-    client.write_single_register(TAG.TAG_LIST[TAG.TANK_FLOW_RATE]["id"], int(value))
-    return 'OK', 200
+        # Creazione del frame principale
+        container = tk.Frame(self)
+        container.pack(padx=10, pady=10)
 
-# Funzione per aggiornare la velocità di deflusso
-@app.route('/drainUpdate', methods=['POST'])
-def drainUpdate():
-    data = request.json
-    value = data.get('value')
-    client.write_single_register(TAG.TAG_LIST[TAG.TANK_DRAIN_RATE]["id"], int(value))
-    return 'OK', 200
+        # Titolo
+        title_label = tk.Label(container, text="HMI " + str(n_plc) + " - Control Panel")
+        title_label.config(font=("Arial", 16))
+        title_label.grid(row=0, column=0, columnspan=2)
+
+        # Sezione Flow Rate
+        flow_label = tk.Label(container, text="Flow Rate")
+        flow_label.grid(row=1, column=0, sticky="w", pady=5)
+
+        self.flow_value_label = tk.Label(container, text="")
+        self.flow_value_label.grid(row=1, column=1, sticky="w", pady=5)
+        
+        self.flow_box = tk.Entry(container, textvariable=flow_rate_value)
+        self.flow_box.grid(row=1, column=2, pady=5)
+
+        flow_button = tk.Button(container, text="Update", command=self.update_flow_rate)
+        flow_button.grid(row=1, column=3, pady=5)
+
+        # Sezione Drain Rate
+        drain_label = tk.Label(container, text="Drain Rate")
+        drain_label.grid(row=2, column=0, sticky="w", pady=5)
+
+        self.drain_value_label = tk.Label(container, text="")
+        self.drain_value_label.grid(row=2, column=1, sticky="w", pady=5)
+        
+        self.drain_box = tk.Entry(container, textvariable=drain_rate_value)
+        self.drain_box.grid(row=2, column=2, pady=5)
+
+        drain_button = tk.Button(container, text="Update", command=self.update_drain_rate)
+        drain_button.grid(row=2, column=3, pady=5)
+
+        # Sezione Water Level
+        water_level_label = tk.Label(container, text="Water Level")
+        water_level_label.grid(row=3, column=0, sticky="w", pady=5)
+
+        self.water_level_value = tk.Label(container, text="(max 1000)")
+        self.water_level_value.grid(row=3, column=1, pady=5)
+
+        # Sezione Flow Control (checkbox)
+        self.flow = tk.BooleanVar()
+        flow_control_label = tk.Label(container, text="Flow Control")
+        flow_control_label.grid(row=4, column=0, sticky="w", pady=5)
+
+        flow_control_checkbox = tk.Checkbutton(container, variable=self.flow, command=self.flow_change)
+        flow_control_checkbox.grid(row=4, column=1, pady=5)
+
+        # Sezione Drain Control (checkbox)
+        self.drain = tk.BooleanVar()
+        drain_control_label = tk.Label(container, text="Drain Control")
+        drain_control_label.grid(row=5, column=0, sticky="w", pady=5)
+
+        drain_control_checkbox = tk.Checkbutton(container, variable=self.drain, command=self.drain_change)
+        drain_control_checkbox.grid(row=5, column=1, pady=5)
+
+        #Logout
+        logout_button = tk.Button(container, text="Logout", command=self.quit)
+        logout_button.grid(row=6, column=0, columnspan=3, pady=5)
+
+        self.stop_flag = threading.Event()
+        threading.Thread(target=self.monitor, daemon=True).start()
+
+    #Qui aggiorna ogni secondo i dati provenienti dal PLC
+    def monitor(self):
+        while not self.stop_flag.is_set():
+            level = self.client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_LEVEL]["id"])[0]
+            self.water_level_value.config(text=str(level)+" (max 1000)")
+            flow_rate = self.client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_FLOW_RATE]["id"])[0]
+            self.flow_value_label.config(text=flow_rate)
+            drain_rate = self.client.read_holding_registers(TAG.TAG_LIST[TAG.TANK_DRAIN_RATE]["id"])[0]
+            self.drain_value_label.config(text=drain_rate)
+            time.sleep(1)
+   
+    # Qui puoi inserire la logica per aggiornare il tasso di flusso     
+    def update_flow_rate(self):
+        flow_rate_value = self.flow_box.get()
+        self.client.write_single_register(TAG.TAG_LIST[TAG.TANK_FLOW_RATE]["id"], int(flow_rate_value))
+
+    # Qui puoi inserire la logica per aggiornare il tasso di drenaggio
+    def update_drain_rate(self):
+        drain_rate_value = self.drain_box.get()
+        self.client.write_single_register(TAG.TAG_LIST[TAG.TANK_DRAIN_RATE]["id"], int(drain_rate_value))
+
+    # Funzione per controllare avvio/arresto del flusso d'acqua
+    def flow_change(self):
+        self.client.write_single_coil(TAG.TAG_LIST[TAG.TANK_FLOW_ACTIVE]["id"], self.flow.get())
+
+    # Funzione per controllare avvio/arresto del drenaggio d'acqua
+    def drain_change(self):
+        self.client.write_single_coil(TAG.TAG_LIST[TAG.TANK_DRAIN_ACTIVE]["id"], self.drain.get())
+
+    # Funzione per tornare alla schermata di login
+    def quit(self):
+        self.stop_flag.set()
+        self.client.close()
+        global authenticated
+        authenticated = False
+        self.master.show_frame(self.master.login)
 
 if __name__ == "__main__":
-    try:
-        client.open()
-        if n_plc == 1:
-            app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=('server.crt', 'server.key'))
-        else:
-            app.run(host='0.0.0.0', port=5002, debug=True, ssl_context=('server.crt', 'server.key'))
-    except Exception as e:
-        print(f"Errore durante la comunicazione con il server: {e}")
-    finally:
-        client.close()
-        
-        
+    ui = App()
+    ui.mainloop()
+    

@@ -21,7 +21,7 @@ then
 elif [ $1 = "HMI.py" ]
 then
       sleep 10
-      python3 $1 $2
+      python3 $1
 else
 	echo "the is no command with name: $1"
 fi

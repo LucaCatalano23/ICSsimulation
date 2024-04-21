@@ -6,13 +6,15 @@ function base64urlEncode(array) {
 
 async function register() {
     try {
+        const menu = document.getElementById("choice").value;
         const username = document.getElementById('username').value;
-        if (username) {
+        console.log(menu);
+        if (username || menu) {
             // Effettuare la richiesta al server per ottenere le opzioni di registrazione
-            const response = await fetch('/register', {
+            const response = await fetch('/createUser/register', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username})
+                body: JSON.stringify({'username':username,'menu':menu})
             });
 
             const registrationOptions = await response.json();
@@ -71,7 +73,7 @@ async function register() {
             };
 
             // Invia la risposta di registrazione al server
-            const registrationResponse = await fetch('/complete-registration', {
+            const registrationResponse = await fetch('/createUser/complete-registration', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -90,8 +92,8 @@ async function register() {
                 document.getElementById('registrationResult').innerText = 'Errore durante la registrazione.';
             }
         } else {
-            console.error('Inserisci un username valido');
-            document.getElementById('registrationResult').innerText = 'Inserisci un username valido.';
+            console.error('Inserisci un username e/o un privilegio valido');
+            document.getElementById('registrationResult').innerText = 'Inserisci un username e/o un privilegio valido.';
         }
     } 
     catch (error) {

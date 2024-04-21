@@ -21,6 +21,10 @@ then
 elif [ $1 = "HMI.py" ]
 then
       sleep 10
+      python3 $1 $2
+elif [ $1 = "usersHandler.py" ]
+then
+      sleep 10
       python3 $1
 else
 	echo "the is no command with name: $1"

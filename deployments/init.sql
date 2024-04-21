@@ -12,5 +12,6 @@ CREATE TABLE credentials (
     user_verified BOOLEAN,
     attestation_object BLOB,
     credential_device_type ENUM('single_device', 'multi_device'),
-    credential_backed_up BOOLEAN
+    credential_backed_up BOOLEAN,
+    privilege ENUM('admin', 'user')
 );

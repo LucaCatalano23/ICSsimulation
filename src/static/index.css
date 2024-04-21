@@ -24,3 +24,12 @@ body {
     margin: 0;
     padding: 0;
 }
+
+select {
+    width: 200px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-top: 5px;
+}

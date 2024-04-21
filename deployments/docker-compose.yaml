@@ -31,7 +31,7 @@ services:
     tty: true  
     working_dir: /src
     privileged: true
-    entrypoint: ["./start.sh", "HMI.py", "0"]
+    entrypoint: ["./start.sh", "HMI.py", "1"]
     container_name: hmi1
     volumes:
       - ../src:/src
@@ -45,7 +45,6 @@ services:
         ipv4_address: 192.168.0.21
     ports: 
       - "5001:5001"
-      - "5002:5002"
         
   hmi2:
     build: ics-docker/.
@@ -53,7 +52,7 @@ services:
     tty: true 
     privileged: true
     working_dir: /src
-    entrypoint: ["./start.sh", "HMI.py", "0"]
+    entrypoint: ["./start.sh", "HMI.py", "2"]
     container_name: hmi2
     volumes:
       - ../src:/src
@@ -66,8 +65,23 @@ services:
       wnet:
         ipv4_address: 192.168.0.22
     ports: 
-      - "5001:5001"
       - "5002:5002"
+
+  usershandler:
+    build: ics-docker/.
+    stdin_open: true # docker run -i
+    tty: true 
+    privileged: true
+    working_dir: /src
+    entrypoint: ["./start.sh", "usersHandler.py", "0"]
+    container_name: usershandler
+    volumes:
+      - ../src:/src
+    networks:
+      wnet:
+        ipv4_address: 192.168.0.29
+    ports: 
+      - "5000:5000"
 
   mysql:
     image: mysql:latest

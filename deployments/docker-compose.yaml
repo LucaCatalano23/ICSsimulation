@@ -45,6 +45,7 @@ services:
         ipv4_address: 192.168.0.21
     ports: 
       - "5001:5001"
+      - "5002:5002"
         
   hmi2:
     build: ics-docker/.
@@ -65,6 +66,7 @@ services:
       wnet:
         ipv4_address: 192.168.0.22
     ports: 
+      - "5001:5001"
       - "5002:5002"
 
   mysql:

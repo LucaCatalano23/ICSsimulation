@@ -1,14 +1,25 @@
-# PRECISAZIONI
-Le operazioni di autenticazione e registrazione in un contesto reale non sarebbero possibili dallo stesso nodo per questioni di sicurezza ed inoltre si dovrebbe tenere traccia dell'utente durante ogni operazione per verficare se possiede le autorizzazioni necessarie per effettuare determinate azioni. E' da considerare il fatto che registrazione e login sono stati implementati con la libreria webauthn.io inoltre, la libreria è stata implementata in modo da funzionare solo con il protocollo https, quindi è necessario creare un certificato per il server. Per fare ciò, seguire le istruzioni riportate di seguito.
+# ICS SIMULATION
 
+## PRECISAZIONI
+In un contesto reale si dovrebbe tenere traccia dell'utente durante ogni operazione per verficare se possiede le autorizzazioni necessarie per effettuare determinate azioni. E' da considerare il fatto che registrazione e login sono stati implementati con la libreria webauthn.io inoltre, la libreria è stata implementata in modo da funzionare solo con il protocollo https, quindi è necessario creare un certificato per il server. Per fare ciò, seguire le istruzioni riportate di seguito.
+
+## WEBAUTHN.IO
+
+### REGISTRAZIONE
+L'operazione di registrazione può essere fatta soltanto da un nodo specifico (ovvero usersHandler) a cui si può accedere soltanto utilizzando un account con privilegio "admin". Per registrare un nuovo utente si deve specificare l'username e il privilegio cui si vuole associare. Il processo di registrazione segue questo flusso:
+![Registration](Images/registration.png)
+
+### AUTENTICAZIONE
+L'operazione di autenticazione può essere fatta da un nodo userHandler o hmi (al primo posso accedere soltanto gli utenti con privilegio "admin"). Il processo di autenticazione segue questo flusso:
+![Authentication](Images/authentication.png)
 ## CREAZIONE CERTIFICATO
 
-## REQUISITI
+### REQUISITI
 E' obbligato rio aggiungere la CA al trust store del sistema operativo altrimenti il certificato non verrà riconosciuto come attendibile e non sarà possibile utilizzare il protocollo https (obbligatorio per la libreria webauth).
 Su Windows, si apre mmc e si aggiunge il certificato alla sezione "Autorità di certificazione radice attendibile"
 
 L'unico modo per poter eseguire il progetto in modo corretto è farlo attraverso la pagina web con dominio localhost, altrimenti il certificato non verrà riconosciuto come attendibile.
-## PROCEDURA
+### PROCEDURA
 https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/
 ```bash
 openssl req -x509 -new -nodes -sha256 -days 1825 -out myCA.pem # Questo ci crea:
@@ -29,9 +40,9 @@ openssl req -new -key server.key -out server.csr
 openssl x509 -req -in server.csr -CA myCA.pem -CAkey privkey.pem -CAcreateserial -out server.crt -days 1825 -sha256 -extfile server.ext
 ```
 
-# DESCRIZIONE ARCHITETTURA
+## DESCRIZIONE ARCHITETTURA
 Il progetto è stato realizzato con l'obiettivo di simulare un sistema di controllo di una fabbrica in cui è possibile monitorare e controllare il livello dell'acqua in due tank. Il sistema simulata la rete come in figura:
-![The Sample tank filling factory](Images/network.jpg)
+![The Sample tank filling factory](Images/network.png)
 
 ## ESECUZIONE
 Aprire il terminale nella cartella del progetto e digitare:

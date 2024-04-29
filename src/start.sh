@@ -4,6 +4,8 @@
 
 name="$1"
 num="$2"
+hmi_plc="$3"
+
 if [ -z "$1" ]
 then
       echo "start command need module_name to initiate!"
@@ -17,7 +19,8 @@ fi
 
 if [ $1 = "PLC.py" ]
 then 
-	python3 $1 $2
+      sleep 7
+	python3 $1 $2 & python3 $3 $2
 elif [ $1 = "HMI.py" ]
 then
       sleep 10

@@ -4,26 +4,39 @@ services:
     build: ics-docker/.
     privileged: true
     working_dir: /src
-    entrypoint: ["./start.sh", "PLC.py", "1"]
+    entrypoint: ["./start.sh", "PLC.py", "1", "HMI_PLC.py"]
     container_name: plc1
     volumes:
       - ../src:/src
+      # Condivisione del socket X11
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      # Impostare l'ambiente DISPLAY
+      - DISPLAY=:0
     networks:
       wnet:
         ipv4_address: 192.168.0.11
-
+    ports:
+      - "5101:5101"
   
   plc2:
     build: ics-docker/.
     privileged: true
     working_dir: /src
-    entrypoint: ["./start.sh", "PLC.py", "2"]
+    entrypoint: ["./start.sh", "PLC.py", "2", "HMI_PLC.py"]
     container_name: plc2
     volumes:
       - ../src:/src
+      # Condivisione del socket X11
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      # Impostare l'ambiente DISPLAY
+      - DISPLAY=:0
     networks:
       wnet:
         ipv4_address: 192.168.0.12
+    ports:
+      - "5102:5102"
       
   hmi1:
     build: ics-docker/.
@@ -31,7 +44,7 @@ services:
     tty: true  
     working_dir: /src
     privileged: true
-    entrypoint: ["./start.sh", "HMI.py", "1"]
+    entrypoint: ["./start.sh", "HMI.py", "1", "0"]
     container_name: hmi1
     volumes:
       - ../src:/src
@@ -52,7 +65,7 @@ services:
     tty: true 
     privileged: true
     working_dir: /src
-    entrypoint: ["./start.sh", "HMI.py", "2"]
+    entrypoint: ["./start.sh", "HMI.py", "2", "0"]
     container_name: hmi2
     volumes:
       - ../src:/src
@@ -73,7 +86,7 @@ services:
     tty: true 
     privileged: true
     working_dir: /src
-    entrypoint: ["./start.sh", "usersHandler.py", "0"]
+    entrypoint: ["./start.sh", "usersHandler.py", "0", "0"]
     container_name: usershandler
     volumes:
       - ../src:/src

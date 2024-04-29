@@ -22,13 +22,12 @@ app = Flask(__name__, static_url_path='/static' , static_folder='static')
     
 adress = ""
 n_plc = -1
-hmi = -1
 authenticated = False
 server_on = False
 
 if len(sys.argv) < 2:
         sys.exit(1)
-hmi = int(sys.argv[1])
+n_plc = int(sys.argv[1])
 
 conn = mysql.connector.connect(
     host="192.168.0.30",  
@@ -115,22 +114,12 @@ class App(tk.Tk):
 class Login(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-                
-        global hmi
-        label = tk.Label(self, text="HMI " + str(hmi))
+
+        global n_plc
+        
+        label = tk.Label(self, text="HMI del PLC " + str(n_plc))
         label.pack()
         
-        # Lista delle opzioni del menu a tendina
-        options = ["PLC 1", "PLC 2"]
-    
-        # Variabile per memorizzare l'opzione selezionata
-        self.selected_var = tk.StringVar()
-        self.selected_var.set(options[0])  # Imposta l'opzione predefinita
-
-        # Creazione del menu a tendina
-        self.option_menu = tk.OptionMenu(self, self.selected_var, *options)
-        self.option_menu.pack(padx=10, pady=10)
-
         # Pulsante per passare alla seconda interfaccia
         button = tk.Button(self, text="Login", command=self.open_webpage)
         button.pack()
@@ -140,18 +129,12 @@ class Login(tk.Frame):
     
     def open_webpage(self):
             # URL della pagina web da aprire
-            choice = self.selected_var.get()
             global n_plc
-            global hmi
             global adress
             global server_on
-            if choice == "PLC 1":
-                n_plc = 1
-            elif choice == "PLC 2":
-                n_plc = 2
 
             if(server_on == False):
-                port = 5000 + hmi
+                port = 5100 + n_plc
                 adress = f"https://localhost:{port}"
                 threading.Thread(target=self.start_server, daemon=True, args=(port,)).start()
                 server_on = True
@@ -175,7 +158,6 @@ class Panel(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         global n_plc
-        global hmi
         self.client = ModbusClient(Controllers.PLC_CONFIG[n_plc]["ip"], Controllers.PLC_CONFIG[n_plc]["port"])
         
         # Definizione delle variabili per i valori di flusso e drenaggio
@@ -187,7 +169,7 @@ class Panel(tk.Frame):
         container.pack(padx=10, pady=10)
 
         # Titolo
-        title_label = tk.Label(container, text="HMI " + str(hmi) + "del PLC " + str(n_plc) + " - Control Panel")
+        title_label = tk.Label(container, text="HMI del PLC " + str(n_plc) + " - Control Panel")
         title_label.config(font=("Arial", 16))
         title_label.grid(row=0, column=0, columnspan=2)
 

@@ -5,18 +5,13 @@ import time
 import sys
 import mysql.connector
 from pyModbusTCP.client import ModbusClient
-from flask import Flask, request, render_template, jsonify, url_for, redirect
+from flask import Flask, request, render_template, jsonify
 from Configs import TAG, Controllers
-from webauthn import (generate_registration_options, 
-                          options_to_json, 
-                          verify_registration_response, 
-                          generate_authentication_options, 
-                          verify_authentication_response)
-from webauthn.helpers.structs import (AuthenticatorAttachment,
-                                          AuthenticatorSelectionCriteria,
-                                          ResidentKeyRequirement,
-                                          UserVerificationRequirement)
-from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
+from webauthn import (options_to_json, 
+                      generate_authentication_options, 
+                      verify_authentication_response)
+from webauthn.helpers.structs import UserVerificationRequirement
+from webauthn.helpers import base64url_to_bytes
 
 app = Flask(__name__, static_url_path='/static' , static_folder='static')
     

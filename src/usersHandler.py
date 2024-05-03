@@ -142,4 +142,34 @@ def verify():
         return jsonify({'error': 'Errore durante la verifica delle credenziali.'}), 500
 
 if __name__ == "__main__":
+    """
+    Tutto il main, tranne per l'avvio del server flask,
+    è utile soltanto in fase di sviluppo e non in produzione 
+    in quanto ogni volta che inizializziamo la rete docker il 
+    db è vergine. E' valido solo per il mio sistema con la
+    passkey che ho salvato nel file admin.txt.
+    """
+    # Creazione di un cursore per eseguire le query
+    cursor = conn.cursor()
+    # Query per contare il numero di righe nella tabella
+    count_query = "SELECT COUNT(*) FROM credentials"
+    cursor.execute(count_query)
+    # Recupero del risultato della query
+    row_count = cursor.fetchone()[0]
+    cursor.close()
+    # Verifica se il numero di righe è zero
+    if row_count == 0:
+        data_to_insert = []
+        with open('admin.txt', 'r') as file:
+            for line in file:
+                # Rimuovi eventuali spazi bianchi e divide la riga in base alla virgola
+                values = line.strip().split(',')
+                data_to_insert.append(tuple(values))
+        # Esegui un'operazione di inserimento per ogni riga di dati letti dal file
+        query = "INSERT INTO credentials (credential_id,credential_public_key,sign_count,aaguid,fmt,credential_type,user_verified,attestation_object,credential_device_type,credential_backed_up,privilege) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        cursor.executemany(query, data_to_insert)
+        # Commit delle modifiche al database
+        conn.commit()
+        # Chiusura del cursore e della connessione al database
+        cursor.close()
     app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('server.crt', 'server.key'))

@@ -14,7 +14,7 @@ printStep "CTEATE TEMP SRC FILE"
 sudo mkdir ./ics-docker/src/
 
 printStep "PRUNING DOCKER"
-sudo docker system prune -f
+sudo docker system prune -f --volumes
 
 printStep 'DOCKER_COMPOSE BUILD'
 sudo docker-compose build

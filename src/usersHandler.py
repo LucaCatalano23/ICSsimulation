@@ -167,4 +167,4 @@ if __name__ == "__main__":
         # Chiusura del cursore e della connessione al database
         cursor.close()
         
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('server.crt', 'server.key'))
+    app.run(host='0.0.0.0', port=5000, debug=False, ssl_context=('server.crt', 'server.key'))

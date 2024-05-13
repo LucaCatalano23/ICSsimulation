@@ -116,7 +116,7 @@ class Login(tk.Frame):
         label.pack()
         
         # Lista delle opzioni del menu a tendina
-        options = ["PLC 1", "PLC 2"]
+        options = ["PLC 1", "PLC 2", "Robotic arm"]
     
         # Variabile per memorizzare l'opzione selezionata
         self.selected_var = tk.StringVar()
@@ -144,6 +144,8 @@ class Login(tk.Frame):
                 n_plc = 1
             elif choice == "PLC 2":
                 n_plc = 2
+            elif choice == "Robotic arm":
+                n_plc = 0
 
             if(server_on == False):
                 port = 5000 + hmi
@@ -157,8 +159,12 @@ class Login(tk.Frame):
             global authenticated
             while authenticated == False:
                 time.sleep(1)
-            panel = Panel(self.master)
-            self.master.show_frame(panel)
+            if n_plc == 0:
+                panel = RoboticPanel(self.master)
+                self.master.show_frame(panel)
+            else:
+                panel = Panel(self.master)
+                self.master.show_frame(panel)
         
     def start_server(self,port):
         try:
@@ -279,6 +285,48 @@ class Panel(tk.Frame):
         authenticated = False
         self.master.show_frame(self.master.login)
 
+class RoboticPanel(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.client = ModbusClient(host="192.168.123.2",port=1025)
+
+        # Griglia per i comandi WASD
+        frame_wasd = tk.Frame(self)
+        frame_wasd.pack(side=tk.LEFT, padx=10)
+        self.w = tk.Button(frame_wasd, text="W", command=lambda: self.send_command(0))
+        self.w.grid(row=0, column=1, pady=5)
+        self.a = tk.Button(frame_wasd, text="A", command=lambda: self.send_command(3))
+        self.a.grid(row=1, column=0, padx=5)
+        self.s = tk.Button(frame_wasd, text="S", command=lambda: self.send_command(1))
+        self.s.grid(row=2, column=1, pady=5)
+        self.d = tk.Button(frame_wasd, text="D", command=lambda: self.send_command(2))
+        self.d.grid(row=1, column=2, padx=5)
+
+        # Griglia per i comandi freccia
+        frame = tk.Frame(self)
+        frame.pack(side=tk.RIGHT, padx=10)
+        self.up = tk.Button(frame, text="⇧", command=lambda: self.send_command(4))
+        self.up.grid(row=0, column=1, pady=5)
+        self.left = tk.Button(frame, text="⇦", command=lambda: self.send_command(7))
+        self.left.grid(row=1, column=0, padx=5)
+        self.down = tk.Button(frame, text="⇩", command=lambda: self.send_command(5))
+        self.down.grid(row=2, column=1, pady=5)
+        self.right = tk.Button(frame, text="⇨", command=lambda: self.send_command(6))
+        self.right.grid(row=1, column=2, padx=5)
+                
+        #Logout
+        logout_button = tk.Button(frame, text="Logout", command=self.quit)
+        logout_button.grid(row=3, column=2, columnspan=3, pady=5)
+            
+    def send_command(self, coil):
+        self.client.write_single_coil(coil, True)
+        
+    def quit(self):
+        self.client.close()
+        global authenticated
+        authenticated = False
+        self.master.show_frame(self.master.login)
+        
 if __name__ == "__main__":
     ui = App()
     ui.mainloop()

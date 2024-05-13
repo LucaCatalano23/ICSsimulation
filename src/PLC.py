@@ -82,7 +82,6 @@ class PLC:
                     
                 # Aggiorno il valore del livello dell'acqua
                 self.server.data_bank.set_holding_registers(TAG.TAG_LIST[TAG.TANK_LEVEL]["id"],[self.water_level])
-                print(self.water_level)
            
                 sleep(0.5)
         except Exception as e:

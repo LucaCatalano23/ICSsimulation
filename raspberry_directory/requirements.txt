@@ -1,0 +1,6 @@
+pyModbusTCP
+flask
+webauthn
+mysql-connector-python
+gpiozero
+pigpio

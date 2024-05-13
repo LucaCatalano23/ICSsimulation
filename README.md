@@ -41,8 +41,8 @@ openssl x509 -req -in server.csr -CA myCA.pem -CAkey privkey.pem -CAcreateserial
 ```
 
 ## DESCRIZIONE ARCHITETTURA
-Il progetto è stato realizzato con l'obiettivo di simulare un sistema di controllo di una fabbrica in cui è possibile monitorare e controllare il livello dell'acqua in due tank. Il sistema simulata la rete come in figura:
-![The Sample tank filling factory](Images/network.png)
+Il progetto è stato realizzato con l'obiettivo di simulare un sistema di controllo di una fabbrica in cui è possibile monitorare e controllare il livello dell'acqua in due tank e controllare un braccio robotico fisico. Il sistema simula la rete come in figura:
+![The Sample tank filling factory](Images/network.jpg)
 
 ## ESECUZIONE
 Aprire il terminale nella cartella del progetto e digitare:
@@ -57,3 +57,13 @@ altrimenti:
 ```bash
 ./start.sh
 ```
+## PLC E HMI FISICO
+Il plc e l'hmi fisici sono stati realizzati attraverso l'uso di un raspberry pi3 model b. Il braccio robotico si connette al raspberry attraverso i pin gpio e comunica tramite protocollo ModbusTCP con gli altri nodi della rete. 
+
+## RASPBERRY DENTRO LA RETE DOCKER
+Il raspberry è collegato all'host su cui è in esecuzione la rete docker attraverso un cavo ethernet.
+La porte ethernet sono state configurate, in entrambe le macchine, in modo tale da avere indirizzi ip statici.
+
+Per rendere il raspberry raggiungibile dall'interno della rete docker si fa uso di un proxy TCP, si crea un container che intercede nella comunicazione tra dento e fuori la rete docker. Il proxy TCP è stato realizzato tramite l'immagine "tdeutsch/tcp-proxy" presente su Docker Hub.
+
+Il raspberry riesce a comunicare con la rete attraverso le porte dei nodi della rete docker esposte all'host.

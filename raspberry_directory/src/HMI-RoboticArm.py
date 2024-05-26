@@ -1,3 +1,4 @@
+import gpiozero
 import tkinter as tk
 import webbrowser
 import sys
@@ -86,7 +87,7 @@ class App(tk.Tk):
         
         # Creazione dei frame per le interfacce
         self.login = Login(self)
-
+        self.panel = Panel(self)
         # Mostra il primo frame all'avvio dell'applicazione
         self.show_frame(self.login)
 
@@ -134,8 +135,7 @@ class Login(tk.Frame):
         if not authenticated:
             self.parent.after(1000, self.check_authenticated)
         else:
-            panel = Panel(self.master)
-            self.master.show_frame(panel)
+            self.master.show_frame(self.master.panel)
         
     def start_server(self,port):
         try:
@@ -144,47 +144,69 @@ class Login(tk.Frame):
             print(f"Errore durante la comunicazione con il server: {e}")
 
 class Panel(tk.Frame):
-        def __init__(self, parent):
-                super().__init__(parent)
-                self.client = ModbusClient("192.168.123.2", 1025)
-
-                # Griglia per i comandi WASD
-                frame_wasd = tk.Frame(self)
-                frame_wasd.pack(side=tk.LEFT, padx=10)
-                self.w = tk.Button(frame_wasd, text="W", command=lambda: self.send_command(0))
-                self.w.grid(row=0, column=1, pady=5)
-                self.a = tk.Button(frame_wasd, text="A", command=lambda: self.send_command(3))
-                self.a.grid(row=1, column=0, padx=5)
-                self.s = tk.Button(frame_wasd, text="S", command=lambda: self.send_command(1))
-                self.s.grid(row=2, column=1, pady=5)
-                self.d = tk.Button(frame_wasd, text="D", command=lambda: self.send_command(2))
-                self.d.grid(row=1, column=2, padx=5)
-
-                # Griglia per i comandi freccia
-                frame = tk.Frame(self)
-                frame.pack(side=tk.RIGHT, padx=10)
-                self.up = tk.Button(frame, text="⇧", command=lambda: self.send_command(4))
-                self.up.grid(row=0, column=1, pady=5)
-                self.left = tk.Button(frame, text="⇦", command=lambda: self.send_command(7))
-                self.left.grid(row=1, column=0, padx=5)
-                self.down = tk.Button(frame, text="⇩", command=lambda: self.send_command(5))
-                self.down.grid(row=2, column=1, pady=5)
-                self.right = tk.Button(frame, text="⇨", command=lambda: self.send_command(6))
-                self.right.grid(row=1, column=2, padx=5)
-                
-                #Logout
-                logout_button = tk.Button(frame, text="Logout", command=self.quit)
-                logout_button.grid(row=3, column=2, columnspan=3, pady=5)
+	def __init__(self, parent):
+		super().__init__(parent)
+		self.client = ModbusClient("192.168.123.2", 1025)
+             
+		self.claw_close = gpiozero.Button(17)
+		self.claw_open = gpiozero.Button(4)
+		self.base_left = gpiozero.Button(27)
+		self.base_right = gpiozero.Button(22)
+		self.lenght_short = gpiozero.Button(5)
+		self.lenght_long = gpiozero.Button(6)
+		self.height_short = gpiozero.Button(13)
+		self.height_high = gpiozero.Button(19)
+				
+		threading.Thread(target=self.controls, daemon=True).start()
+		    
+		label = tk.Label(self, text="Use the commands to control the robotic arm ")
+		label.pack()
+		
+		#Logout
+		logout_button = tk.Button(self, text="Logout", command=self.quit)
+		logout_button.pack()
+		
+		# Dimensioni del frame di login
+		self.configure(width=500, height=300) 
             
-        def send_command(self, coil):
-                self.client.write_single_coil(coil, True)
+	def controls(self):
+		global authenticated
+		while True:
+			if authenticated:
+				if(self.claw_close.is_pressed):
+					self.send_command(0)
+					time.sleep(0.02)
+				if(self.claw_open.is_pressed):
+					self.send_command(1)
+					time.sleep(0.02)
+				if(self.base_left.is_pressed):
+					self.send_command(3)
+					time.sleep(0.02)				
+				if(self.base_right.is_pressed):
+					self.send_command(2)
+					time.sleep(0.02)
+				if(self.lenght_short.is_pressed):
+					self.send_command(7)
+					time.sleep(0.02)
+				if(self.lenght_long.is_pressed):
+					self.send_command(6)
+					time.sleep(0.02)
+				if(self.height_short.is_pressed):
+					self.send_command(5)
+					time.sleep(0.02)
+				if(self.height_high.is_pressed):
+					self.send_command(4)
+					time.sleep(0.02)
+						
+	def send_command(self, coil):
+		self.client.write_single_coil(coil, True)
         
-        def quit(self):
-                self.client.close()
-                global authenticated
-                authenticated = False
-                self.master.show_frame(self.master.login)
+	def quit(self):
+		self.client.close()
+		global authenticated
+		authenticated = False
+		self.master.show_frame(self.master.login)
         
 if __name__ == "__main__":
-        ui = App()
-        ui.mainloop()
+	ui = App()
+	ui.mainloop()

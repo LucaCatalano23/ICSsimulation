@@ -86,19 +86,19 @@ async function register() {
 
             if (result.success) {
                 // Se la registrazione ha successo, mostra un messaggio di conferma
-                document.getElementById('registrationResult').innerText = 'Registrazione completata con successo!';
+                document.getElementById('Result').innerText = 'Registrazione completata con successo!';
             } else {
                 // Altrimenti, mostra un messaggio di errore
-                document.getElementById('registrationResult').innerText = 'Errore durante la registrazione.';
+                document.getElementById('Result').innerText = 'Errore durante la registrazione.';
             }
         } else {
             console.error('Inserisci un username e/o un privilegio valido');
-            document.getElementById('registrationResult').innerText = 'Inserisci un username e/o un privilegio valido.';
+            document.getElementById('Result').innerText = 'Inserisci un username e/o un privilegio valido.';
         }
     } 
     catch (error) {
         console.error('Errore durante la registrazione:', error);
-        document.getElementById('registrationResult').innerText = 'Errore durante la registrazione:';
+        document.getElementById('Result').innerText = 'Errore durante la registrazione:';
     } 
 }
 

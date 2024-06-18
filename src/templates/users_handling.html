@@ -10,7 +10,7 @@
     <body>
         <div class="container">
             <h1 class="title">Passwordless Registration</h1>
-            <div id="registrationResult" class="result"></div>
+            <div id="Result" class="result"></div>
 
             <form id="registrationForm">
                 <label for="username">Username:</label>
@@ -20,10 +20,13 @@
                     <option value="user">user</option>
                 </select>
                 <button type="button" id="registerButton">Register</button>
+                <button type="button" id="deleteButton">Delete</button>
             </form>
         </div>
 
         <script src="https://unpkg.com/cbor-js"></script>
         <script src="/static/registration_handler.js"></script>
+        <script src="/static/authentication_delete.js"></script>
+
     </body>
 </html>

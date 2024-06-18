@@ -15,7 +15,7 @@ from webauthn.helpers import base64url_to_bytes
 
 app = Flask(__name__, static_url_path='/static' , static_folder='static')
     
-adress = ""
+address = ""
 n_plc = -1
 authenticated = False
 server_on = False
@@ -73,7 +73,7 @@ def verify():
         credential_public_key, sign_count = result[0]
         # Verificare le credenziali ricevute dal client
         result = verify_authentication_response(credential=credential,
-                                                expected_origin=adress, 
+                                                expected_origin=address, 
                                                 expected_rp_id="localhost",
                                                 expected_challenge=base64url_to_bytes(data.get("challenge")),
                                                 credential_current_sign_count=sign_count,
@@ -125,17 +125,17 @@ class Login(tk.Frame):
     def open_webpage(self):
             # URL della pagina web da aprire
             global n_plc
-            global adress
+            global address
             global server_on
 
             if(server_on == False):
                 port = 5100 + n_plc
-                adress = f"https://localhost:{port}"
+                address = f"https://localhost:{port}"
                 threading.Thread(target=self.start_server, daemon=True, args=(port,)).start()
                 server_on = True
                 time.sleep(1)        
                 
-            webbrowser.open(adress)
+            webbrowser.open(address)
             
             global authenticated
             while authenticated == False:

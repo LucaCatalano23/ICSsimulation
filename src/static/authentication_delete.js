@@ -44,7 +44,7 @@ async function authenticate() {
         };
 
         // Invia la risposta di autenticazione al server
-        const authenticationResponse = await fetch('/verify', {
+        const authenticationResponse = await fetch('/verifyDelete', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -57,16 +57,16 @@ async function authenticate() {
 
         // Mostra il risultato dell'autenticazione
         if (registrationResult.success) {
-            document.getElementById('authenticationResult').innerText = 'Autenticazione riuscita!';
-            window.location.href = '/usersHandling';
+            document.getElementById('Result').innerText = 'Eliminazione riuscita!';
+            window.close();
         } else {
-            document.getElementById('authenticationResult').innerText = 'Autenticazione fallita.';
+            document.getElementById('Result').innerText = 'Autenticazione fallita.';
         }
     } catch (error) {
         console.error('Errore durante l\'autenticazione:', error);
-        document.getElementById('authenticationResult').innerText = 'Errore durante l\'autenticazione.';
+        document.getElementById('Result').innerText = 'Errore durante l\'autenticazione.';
     }
 }
 
 // Aggiungi un gestore di eventi per il click del pulsante di autenticazione
-document.getElementById('authenticateButton').addEventListener('click', authenticate);
+document.getElementById('deleteButton').addEventListener('click', authenticate);

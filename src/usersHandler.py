@@ -27,9 +27,9 @@ conn = mysql.connector.connect(
 def index():
     return render_template('login_admin.html')
 
-@app.route('/createUser', methods=['GET'])
+@app.route('/usersHandling', methods=['GET'])
 def createUser():
-    return render_template('create_user.html')
+    return render_template('users_handling.html')
 
 @app.route('/createUser/register', methods=['POST'])
 def register():
@@ -134,6 +134,43 @@ def verify():
         print('Errore durante la verifica delle credenziali:', e)
         return jsonify({'error': 'Errore durante la verifica delle credenziali.'}), 500
 
+@app.route('/verifyDelete', methods=['POST'])
+def verifyDelete():
+    try:
+        data = request.json
+
+        credential = data.get('credential')
+        credential_id = credential.get("id")
+        cursor = conn.cursor()
+        query = "SELECT credential_public_key, sign_count FROM credentials WHERE credential_id = %s"
+        values = (credential_id,)
+        cursor.execute(query, values)
+        result = cursor.fetchall()
+        cursor.close()
+        credential_public_key, sign_count = result[0]
+        # Verificare le credenziali ricevute dal client
+        result = verify_authentication_response(credential=credential,
+                                                expected_origin="https://localhost:5000", 
+                                                expected_rp_id="localhost",
+                                                expected_challenge=base64url_to_bytes(data.get("challenge")),
+                                                credential_current_sign_count=sign_count,
+                                                credential_public_key=credential_public_key,
+                                                require_user_verification=True)
+        
+        # eliminare le credenziali dal database
+        cursor = conn.cursor()
+        query = "DELETE FROM credentials WHERE credential_id = %s"
+        values = (credential_id,)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()      
+        
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        print('Errore durante la verifica delle credenziali:', e)
+        return jsonify({'error': 'Errore durante la verifica delle credenziali.'}), 500
+    
 if __name__ == "__main__":
     """
     Tutto il main, tranne per l'avvio del server flask,
